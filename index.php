@@ -12,6 +12,7 @@ require_once './controllers/UsuarioController.php';
 require_once './controllers/ProductoController.php';
 require_once './controllers/MesaController.php';
 require_once './controllers/PedidoController.php';
+require_once './controllers/PedidoProductoController.php';
 
 $dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
 $dotenv->load();
@@ -29,32 +30,52 @@ $app->get('/', function (Request $request, Response $response, $args) {
 
 // peticiones Usuarios
 $app->group('/usuarios', function (RouteCollectorProxy $group) {
-    $group->get('[/]', \UsuarioController::class . ':TraerTodos');
-    $group->get('/{usuario}', \UsuarioController::class . ':TraerUno');
-    $group->post('[/]', \UsuarioController::class . ':CargarUno');
+    $group->get('[/]', \UsuarioController::class . ':TraerTodos'); // funciona OK
+    $group->get('/{dni}', \UsuarioController::class . ':TraerUno');// funciona OK
+    $group->post('[/]', \UsuarioController::class . ':CargarUno');// funciona OK
+    $group->delete('/baja/{id}', \UsuarioController::class . ':BorrarUno'); // funciona OK
+    $group->post('/modificacion[/]', \UsuarioController::class . ':ModificarUno');// funciona OK
+
   });
 
 // peticiones Productos
 $app->group('/productos', function (RouteCollectorProxy $group) {
-  $group->get('[/]', \ProductoController::class . ':TraerTodos');
-  $group->get('/{producto}', \ProductoController::class . ':TraerUno');
-  $group->post('[/]', \ProductoController::class . ':CargarUno');
+  $group->get('[/]', \ProductoController::class . ':TraerTodos');// funciona OK
+  $group->get('/{id}', \ProductoController::class . ':TraerUno'); // funciona OK
+  $group->post('[/]', \ProductoController::class . ':CargarUno');// funciona OK
+  $group->delete('/baja/{id}', \ProductoController::class . ':BorrarUno');// funciona OK
+  $group->post('/modificacion[/]', \ProductoController::class . ':ModificarUno');// funciona OK
 });
 
 // peticiones Mesa
 $app->group('/mesas', function (RouteCollectorProxy $group) {
-  $group->get('[/]', \MesaController::class . ':TraerTodos');
-  $group->get('/{mesa}', \MesaController::class . ':TraerUno');
-  $group->post('[/]', \MesaController::class . ':CargarUno');
+  $group->get('[/]', \MesaController::class . ':TraerTodos');// funciona OK
+  $group->get('/{codigoMesa}', \MesaController::class . ':TraerUno'); // funciona OK
+  $group->post('[/]', \MesaController::class . ':CargarUno');// funciona OK
+  $group->delete('/baja/{codigoMesa}', \MesaController::class . ':BorrarUno');// funciona OK
+  $group->post('/modificacion[/]', \MesaController::class . ':ModificarUno');// funciona OK
+
 });
 
 
 // peticiones Pedidos
 $app->group('/pedidos', function (RouteCollectorProxy $group) {
-  $group->get('[/]', \PedidoController::class . ':TraerTodos');
-  $group->get('/{pedido}', \PedidoController::class . ':TraerUno');
-  $group->post('[/]', \PedidoController::class . ':CargarUno');
+  $group->get('[/]', \PedidoController::class . ':TraerTodos');// funciona OK
+  $group->get('/{codigoPedido}', \PedidoController::class . ':TraerUno');// funciona OK
+  $group->post('[/]', \PedidoController::class . ':CargarUno');// funciona OK
+  $group->delete('/baja/{codigoPedido}', \PedidoController::class . ':BorrarUno'); // funciona OK
+  $group->post('/modificacion[/]', \PedidoController::class . ':ModificarUno');// funciona OK
 });
+
+
+// peticiones PedidoProducto
+$app->group('/pedidoproducto', function (RouteCollectorProxy $group) {
+  $group->get('[/]', \PedidoProductoController::class . ':TraerTodos');// funciona OK
+  $group->get('/{id}', \PedidoProductoController::class . ':TraerUno');// funciona OK
+  $group->post('[/]', \PedidoProductoController::class . ':CargarUno');// funciona OK
+  $group->delete('/baja/{id}', \PedidoProductoController::class . ':BorrarUno');// funciona OK
+});
+
 
 // Run app
 $app->run();
