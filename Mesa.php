@@ -34,14 +34,63 @@ class Mesa
     public static function obtenerTodos()
     {
         $objAccesoDatos = AccesoDatos::obtenerInstancia();
-        $consulta = $objAccesoDatos->prepararConsulta("SELECT mesa.id, mesa.codigoMesa, mesa.estadoMesa 
-        FROM mesa JOIN estadomesa ON mesa.estadoMesa = estadomesa.id");
+      //$consulta = $objAccesoDatos->prepararConsulta("SELECT mesa.id, mesa.codigoMesa, mesa.estadoMesa 
+      //FROM mesa JOIN estadomesa ON mesa.estadoMesa = estadomesa.estado");
+        $consulta = $objAccesoDatos->prepararConsulta("SELECT 
+        mesa.id, 
+        mesa.codigoMesa, 
+        estadomesa.estado as estadoMesa 
+        FROM 
+            mesa 
+        JOIN 
+            estadomesa ON mesa.estadoMesa = estadomesa.id");
         $consulta->execute();
 
         return $consulta->fetchAll(PDO::FETCH_CLASS, 'Mesa');
     }
+    
+    public static function obtenerMesa($codigo)
+    {
+        $objAccesoDatos = AccesoDatos::obtenerInstancia();
+        $consulta = $objAccesoDatos->prepararConsulta("SELECT 
+        mesa.id, mesa.codigoMesa, estadomesa.estado as estadoMesa
+        FROM mesa 
+        JOIN estadomesa ON mesa.estadoMesa = estadomesa.id
+        WHERE mesa.codigoMesa = :codigoMesa");
 
 
+        $consulta->bindValue(':codigoMesa', $codigo, PDO::PARAM_STR);
+        $consulta->execute();
+
+        return $consulta->fetchObject('Mesa');
+    }
+    
+    public static function cerrarMesa($codigoMesa)
+    {
+        $objAccesoDato = AccesoDatos::obtenerInstancia();
+        $nuevoEstado = 4;
+        $consulta = $objAccesoDato->prepararConsulta("UPDATE mesa SET estadoMesa = :estadoMesa  
+        WHERE codigoMesa = :codigoMesa");
+        $consulta->bindValue(':codigoMesa', $codigoMesa, PDO::PARAM_INT);
+        $consulta->bindValue(':estadoMesa', $nuevoEstado, PDO::PARAM_INT);
+
+        $consulta->execute();
+    }
+
+    public static function modificarMesa($mesa)
+    {
+        $objAccesoDato = AccesoDatos::obtenerInstancia();
+        $consulta = $objAccesoDato->prepararConsulta("UPDATE mesa 
+        SET codigoMesa = :codigoMesa, 
+        estadoMesa = :estadoMesa
+        WHERE id = :id");
+
+        $consulta->bindValue(':codigoMesa', $mesa->codigoMesa, PDO::PARAM_STR);
+        $consulta->bindValue(':estadoMesa', $mesa->estadoMesa, PDO::PARAM_INT);
+        $consulta->bindValue(':id', $mesa->id, PDO::PARAM_INT);
+
+        $consulta->execute();
+    }
 }
 
 ?>

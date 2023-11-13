@@ -21,6 +21,7 @@ class UsuarioController
         $usuario->dni = $dni;
         $usuario->estado = $estado;
         $usuario->fechaAlta = date ('Y-m-d H:i:s');
+        $usuario->fechaModificacion = "0000-00-00";
 
         $usuario->crearUsuario();
 
@@ -41,12 +42,10 @@ class UsuarioController
           ->withHeader('Content-Type', 'application/json');
     }
     
-
-    /*
     public function TraerUno($request, $response, $args)
     {
         // Buscamos usuario por nombre
-        $usr = $args['nombre'];
+        $usr = $args['dni'];
         $usuario = Usuario::obtenerUsuario($usr);
         $payload = json_encode($usuario);
 
@@ -55,13 +54,41 @@ class UsuarioController
           ->withHeader('Content-Type', 'application/json');
     }
 
-    
+    public function BorrarUno($request, $response, $args)
+    {
+        $usuarioId = $args["id"];
+        Usuario::borrarUsuario($usuarioId);
+
+        $payload = json_encode(array("mensaje" => "Usuario borrado con exito"));
+
+        $response->getBody()->write($payload);
+        return $response
+          ->withHeader('Content-Type', 'application/json');
+    }
+
+
     public function ModificarUno($request, $response, $args)
     {
         $parametros = $request->getParsedBody();
 
+        $id = $parametros['id'];        
         $nombre = $parametros['nombre'];
-        Usuario::modificarUsuario($nombre);
+        $clave = $parametros['clave'];
+        $tipoUsuario = $parametros['tipoUsuario'];
+        $dni = $parametros['dni'];
+        $estado = $parametros['estado'];
+
+        // Creamos el usuario
+        $usuario = new Usuario();
+        $usuario->id = $id;
+        $usuario->nombre = $nombre;
+        $usuario->clave = $clave;
+        $usuario->tipoUsuario = $tipoUsuario;
+        $usuario->dni = $dni;
+        $usuario->estado = $estado;
+        $usuario->fechaModificacion = date ('Y-m-d H:i:s');
+
+        Usuario::modificarUsuario($usuario);
 
         $payload = json_encode(array("mensaje" => "Usuario modificado con exito"));
 
@@ -70,17 +97,4 @@ class UsuarioController
           ->withHeader('Content-Type', 'application/json');
     }
 
-    public function BorrarUno($request, $response, $args)
-    {
-        $parametros = $request->getParsedBody();
-
-        $usuarioId = $parametros['usuarioId'];
-        Usuario::borrarUsuario($usuarioId);
-
-        $payload = json_encode(array("mensaje" => "Usuario borrado con exito"));
-
-        $response->getBody()->write($payload);
-        return $response
-          ->withHeader('Content-Type', 'application/json');
-    }*/
 }
