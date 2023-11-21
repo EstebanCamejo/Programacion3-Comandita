@@ -134,8 +134,23 @@ class Usuario
         $consulta->bindValue(':estado', $usuario->estado, PDO::PARAM_INT);
         $consulta->bindValue(':fechaModificacion', $fechaModificacion, PDO::PARAM_STR);
         $consulta->bindValue(':id', $usuario->id, PDO::PARAM_INT);
-        $consulta->execute();
-                                
-        
+        $consulta->execute();                                        
     }
+
+    public static function validarUsuario($usuario)
+    {
+        $objAccesoDato = AccesoDatos::obtenerInstancia();
+        
+        $consulta = $objAccesoDato->prepararConsulta("SELECT* FROM usuario 
+        WHERE dni = :dni AND clave = :clave");
+       
+        $consulta->bindValue(':clave', $usuario->clave, PDO::PARAM_STR);
+        $consulta->bindValue(':dni', $usuario->dni, PDO::PARAM_INT);
+
+        $consulta->execute();       
+        
+        return $consulta->fetchObject('Usuario');
+    }
+
+
 }

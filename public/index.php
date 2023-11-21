@@ -14,6 +14,9 @@ require_once './controllers/MesaController.php';
 require_once './controllers/PedidoController.php';
 require_once './controllers/PedidoProductoController.php';
 require_once './controllers/ClienteController.php';
+require_once './middlewares/AutentificadorJWT.php';
+require_once './middlewares/AutentificadorMiddleware.php';
+
 
 $dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
 $dotenv->load();
@@ -31,15 +34,18 @@ $app->get('/', function (Request $request, Response $response, $args) {
 
 // peticiones Usuarios
 $app->group('/usuarios', function (RouteCollectorProxy $group) {
-    $group->get('[/]', \UsuarioController::class . ':TraerTodos'); // funciona OK
+    $group->get('[/]', \UsuarioController::class . ':TraerTodos')// funciona OK
+    ->add(\AutentificadorMiddleware::class . ':verificarRolSocio') ;
+    
+    
     $group->get('/{dni}', \UsuarioController::class . ':TraerUno');// funciona OK
     $group->post('[/]', \UsuarioController::class . ':CargarUno');// funciona OK
     
     $group->delete('/borrar/{id}', \UsuarioController::class . ':BorrarUno'); // funciona OK
     $group->post('/baja[/]', \UsuarioController::class . ':BajarUno'); // funciona OK
-
+    
     $group->post('/modificacion[/]', \UsuarioController::class . ':ModificarUno');
-  });
+  })->add(\AutentificadorMiddleware::class . ':verificarToken');
 
 // peticiones Productos
 $app->group('/productos', function (RouteCollectorProxy $group) {
@@ -94,9 +100,9 @@ $app->group('/pedidoproducto', function (RouteCollectorProxy $group) {
 });
 
 
-$app->post('/cliente',  \ClienteController::class . ':TraerPedido');
+$app->post('/cliente[/]',  \ClienteController::class . ':TraerPedido');
 //$app->post('/cliente[/]', \ClienteController::class . ':CargarUno');
-$app->post('/login',  \UsuarioController::class . ':Login');
+$app->post('/login[/]',  \UsuarioController::class . ':Login');
 
 
 

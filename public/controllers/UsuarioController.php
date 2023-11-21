@@ -22,7 +22,7 @@ class UsuarioController
         $usuario->estado = $estado;
         $usuario->fechaAlta = date ('Y-m-d H:i:s');
         $usuario->fechaModificacion = date (':iY-m-d H:s');//"0000-00-00";
-
+        $usuario->activo = 1;
         $usuario->crearUsuario();
 
         $payload = json_encode(array("mensaje" => "Usuario creado con exito"));
@@ -123,10 +123,19 @@ class UsuarioController
         $usuario->dni = $dni;
         $usuario->clave = $clave;     
 
-        Usuario::validarUsuario($usuario);
+        $usuario = Usuario::validarUsuario($usuario);
+        if( $usuario == null)
+        {
+          $payload = json_encode(array("mensaje" => "Usuario inexistente."));
+        }else
+        {
+          $datos = array('nombre'=>$usuario->nombre, 'dni'=>$usuario->dni,
+          'sector'=>$usuario->sector,'tipoUsuario'=>$usuario->tipoUsuario);
 
-        $payload = json_encode(array("mensaje" => "Usuario modificado con exito"));
+          $token = AutentificadorJWT::CrearToken($datos);
+          $payload = json_encode(array('jwt'=>$token));
 
+        }
         $response->getBody()->write($payload);
         return $response
           ->withHeader('Content-Type', 'application/json');
