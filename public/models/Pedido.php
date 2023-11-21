@@ -15,6 +15,7 @@ class Pedido
     public $fechaBaja;
     public $precioFinal;
     public $activo;
+    public $foto;
 
     public function crearPedido()
     {
@@ -23,9 +24,9 @@ class Pedido
         $codigoAlfanumerico = Pedido::generarCodigoAlfanumerico(5);
         $consulta = $objAccesoDatos->prepararConsulta("INSERT INTO pedido (codigoPedido, idCliente, codigoMesa, 
         idEmpleado, fechaFinalizacion, estadoPedido, 
-        fechaAlta, fechaModificacion, fechaBaja, precioFinal, activo) 
+        fechaAlta, fechaModificacion, fechaBaja, precioFinal, activo, foto) 
         VALUES (:codigoPedido, :idCliente, :codigoMesa, :idEmpleado, :fechaFinalizacion, 
-        :estadoPedido, :fechaAlta, :fechaModificacion, :fechaBaja, :precioFinal, :activo)");   
+        :estadoPedido, :fechaAlta, :fechaModificacion, :fechaBaja, :precioFinal, :activo, :foto)");   
 
         $consulta->bindValue(':codigoPedido', $this->codigoPedido = $codigoAlfanumerico);
         $consulta->bindValue(':idCliente', $this->idCliente, PDO::PARAM_INT);    
@@ -38,7 +39,7 @@ class Pedido
         $consulta->bindValue(':fechaBaja', $this->fechaBaja, PDO::PARAM_STR);           
         $consulta->bindValue(':precioFinal', $this->precioFinal, PDO::PARAM_INT); 
         $consulta->bindValue(':activo', $this->activo, PDO::PARAM_INT);    
-        
+        $consulta->bindValue(':foto', $this->activo, PDO::PARAM_STR);    
         //$precioFinal = $this->calcularPrecioFinal($this->codigoPedido);
         //$consulta->bindValue(':precioFinal', $precioFinal, PDO::PARAM_INT); 
 
@@ -73,7 +74,8 @@ class Pedido
         pedido.fechaAlta,
         pedido.fechaModificacion,
         pedido.fechaBaja,
-        pedido.precioFinal
+        pedido.precioFinal,
+        pedido.foto
         FROM 
             pedido 
         LEFT JOIN 
@@ -92,13 +94,13 @@ class Pedido
             pedido.idCliente, 
             pedido.codigoMesa, 
             pedido.idEmpleado, 
-
             pedido.fechaFinalizacion, 
             estadopedido.estado as estadoPedido, 
             pedido.fechaAlta,
             pedido.fechaModificacion,
             pedido.fechaBaja,
-            pedido.precioFinal 
+            pedido.precioFinal, 
+            pedido.foto
             FROM pedido 
             JOIN estadopedido ON pedido.estadoPedido = estadopedido.id 
             WHERE pedido.codigoPedido = :codigoPedido AND pedido.activo = 1");
@@ -147,7 +149,6 @@ class Pedido
         SET idCliente = :idCliente, 
         codigoMesa = :codigoMesa,
         idEmpleado = :idEmpleado,
-
         fechaFinalizacion = :fechaFinalizacion,
         estadoPedido = :estadoPedido,
         fechaModificacion = :fechaModificacion,
@@ -202,12 +203,79 @@ class Pedido
     }
     
     
-    
+    public function GuardarImagen($ruta, $imagen)
+    {
+        $destino = $ruta . ".jpg";
+
+        $this->foto_mesa = $destino;
+        
+        if(!move_uploaded_file($imagen["tmp_name"], $destino))
+        {
+            $this->foto_mesa = "Error";
+        }
+
+    }
 
 
+    public function SubirFoto()
+    {
+        $accesoDb = AccesoDatos::obtenerInstancia();
+
+        $consulta = $accesoDb->prepararConsulta("UPDATE pedido SET foto = :foto WHERE id = :id");
+
+        $consulta->bindValue(':id', $this->id, PDO::PARAM_INT);
+        $consulta->bindValue(':foto', $this->codigoPedido, PDO::PARAM_STR);
+
+        $consulta->execute();
+
+        return $consulta->rowCount();
+
+    }
+    
+    public static function ValidarPedidoPorCodigo($codigoPedido)
+    {
+        $listaPedido = Pedido::obtenerTodos();
+        $esValido = -1;
+        foreach ($listaPedido as $pedido) 
+        {
+            if($pedido->codigoPedido == $codigoPedido)
+            {
+                $esValido = $pedido->id;
+                break;
+            }
+        }
+        return $esValido;
+    }
     
     
-    
+    public static function ListosParaServir()
+    {        
+        $objAccesoDato = AccesoDatos::obtenerInstancia();
+        $cambiosRealizados = false;
+        $mesasModificadas = [];
+        // Consulta para obtener los códigos de mesa de pedidos con estado igual a 2
+        $consultaPedidos = $objAccesoDato->prepararConsulta(
+            "SELECT codigoMesa FROM pedido WHERE estadoPedido = 2"
+        );
+        $consultaPedidos->execute();
+        $pedidos = $consultaPedidos->fetchAll(PDO::FETCH_ASSOC);
+
+        foreach ($pedidos as $pedido) {
+            $codigoMesa = $pedido['codigoMesa'];
+
+            // Actualizar el estadoMesa a 2 para todas las filas en la tabla mesa 
+            // con el mismo código de mesa
+            $consultaMesa = $objAccesoDato->prepararConsulta(
+                "UPDATE mesa SET estadoMesa = 2 WHERE codigoMesa = :codigoMesa"
+            );
+            $consultaMesa->bindValue(':codigoMesa', $codigoMesa, PDO::PARAM_STR);
+            $consultaMesa->execute();
+            $cambiosRealizados = true;
+            $mesasModificadas [] = $codigoMesa;
+        }
+        return ($cambiosRealizados) ? $mesasModificadas : false;
+     
+    }
 }
 
 

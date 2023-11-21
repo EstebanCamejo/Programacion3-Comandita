@@ -15,6 +15,15 @@ class PedidoController
        // $precioFinal = $parametros['precioFinal'];
        // $estadoPedido = $parametros ['estadoPedido'];
 
+     /* if(isset($parametros['foto']) && $parametros['foto'] != null)
+       {
+           $fotoMesa = $parametros['foto'];
+       }
+       else
+       {
+           $fotoMesa = "No hay imagen.";
+       }*/
+       $fotoMesa = "No hay imagen.";
         // Creamos el Pedido
         $pedido = new Pedido();
        // $pedido->codigoPedido = $codigoPedido;
@@ -28,7 +37,9 @@ class PedidoController
         $pedido->fechaModificacion =  date (':iY-m-d H:s');//"0000-00-00";
         $pedido->fechaBaja =  date (':iY-m-d H:s');//"0000-00-00";
         $pedido->activo = 1;
+        $pedido->foto = $fotoMesa;
 
+       
 
         $pedido->crearPedido();
 
@@ -141,6 +152,57 @@ class PedidoController
         return $response
           ->withHeader('Content-Type', 'application/json');
     }
+
+    public function SubirFoto($request, $response, $args)
+    {
+        $parametros = $request->getParsedBody();
+
+        $codigoPedido = $parametros['codigoPedido'];       
+        $idPedido = Pedido::ValidarPedidoPorCodigo($codigoPedido);
+
+        // Creamos el pedido
+        $pedido = new Pedido();
+        $pedido->codigoPedido = $codigoPedido;
+        $pedido->id= $idPedido;
+
+        $pedido->GuardarImagen( "Fotos/{$codigoPedido}", $_FILES['foto']);
+
+        if($pedido->SubirFoto() > 0)
+        {
+            $payload = json_encode(array("mensaje" => "Foto Agregada."));
+        }
+        else
+        {
+            $payload = json_encode(array("mensaje" => "No se pudo agregar la imagen."));
+        }
+        
+        $response->getBody()->write($payload);
+        return $response
+          ->withHeader('Content-Type', 'application/json');
+    }
+
+    public function ListosParaServir($request, $response, $args)
+    {
+        // Buscamos mesa por codigo
+        $pedido = new Pedido();
+
+        $cambiosRealizados = $pedido->ListosParaServir();
+        if(is_array($cambiosRealizados))
+        {
+          $payload = json_encode(array("mensaje" => "Mesas actualizadas.", "mesasModificadas" => $cambiosRealizados));
+        }
+        else
+        {
+            $payload = json_encode(array("mensaje" => "No hay mesas que actualizar."));
+        }
+
+        $response->getBody()->write($payload);
+        return $response
+          ->withHeader('Content-Type', 'application/json');
+    }
+
+
+
 }
 
 

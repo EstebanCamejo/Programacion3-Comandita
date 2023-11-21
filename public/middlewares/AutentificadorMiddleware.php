@@ -88,6 +88,79 @@ class AutentificadorMiddleware
       
         return $response->withHeader('Content-Type','application/json');
     }
+
+
+    public static function verificarRolMozo(Request $request, RequestHandler $handler) : Response
+    {
+        $header = $request->getHeaderLine('Authorization');
+      
+        $token = trim(explode("Bearer", $header)[1]);
+        try{
+            AutentificadorJWT::VerificarToken($token);
+
+            //////
+            $data = AutentificadorJWT::ObtenerData($token);
+            /// si es un socio
+            if ($data->tipoUsuario === 2)
+            {   
+                //aca propaga el middleware a otro
+                $request->datosToken= $data;
+
+                $response = $handler->handle($request);
+            } // si no es socio tiro una excepcion
+            else
+            {
+                throw new Exception();
+            }          
+        }
+        catch (Exception $e)
+        {
+            $response = new Response();
+            $payload = json_encode(array('mensaje' => 'ERROR: Usuario no autorizado'));
+            $response->getBody()->write( $payload);
+        }
+       
+      
+        return $response->withHeader('Content-Type','application/json');
+    }
+
+    public static function verificarRolOtrosUsuarios(Request $request, RequestHandler $handler) : Response
+    {
+        $header = $request->getHeaderLine('Authorization');
+      
+        $token = trim(explode("Bearer", $header)[1]);
+        try{
+            AutentificadorJWT::VerificarToken($token);
+
+            //////
+            $data = AutentificadorJWT::ObtenerData($token);
+            /// si es un socio
+            if ($data->tipoUsuario >= 3)
+            {   
+                //aca propaga el middleware a otro
+                $request->datosToken= $data;
+
+                $response = $handler->handle($request);
+            } // si no es socio tiro una excepcion
+            else
+            {
+                throw new Exception();
+            }          
+        }
+        catch (Exception $e)
+        {
+            $response = new Response();
+            $payload = json_encode(array('mensaje' => 'ERROR: Usuario no autorizado'));
+            $response->getBody()->write( $payload);
+        }
+       
+      
+        return $response->withHeader('Content-Type','application/json');
+    }
+
+
+
+    
 }
 
 ?>

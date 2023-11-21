@@ -18,9 +18,9 @@ class Usuario
         $consulta = $objAccesoDatos->prepararConsulta("INSERT INTO usuario (nombre, clave, tipoUsuario, dni,
          fechaAlta, fechaModificacion, estado, activo)
          VALUES (:nombre, :clave, :tipoUsuario, :dni, :fechaAlta, :fechaModificacion, :estado, :activo)");
-        $claveHash = password_hash($this->clave, PASSWORD_DEFAULT);
+       
         $consulta->bindValue(':nombre', $this->nombre, PDO::PARAM_STR);
-        $consulta->bindValue(':clave', $claveHash);
+        $consulta->bindValue(':clave', $this->clave, PDO::PARAM_STR);
         $consulta->bindValue(':tipoUsuario', $this->tipoUsuario, PDO::PARAM_INT);
         $consulta->bindValue(':dni', $this->dni, PDO::PARAM_INT);
         $consulta->bindValue(':fechaAlta', $this->fechaAlta, PDO::PARAM_STR);
