@@ -99,6 +99,22 @@ class MesaController
         return $response
           ->withHeader('Content-Type', 'application/json');
     }
+
+
+    public function MasUsada($request, $response, $args)
+    {
+        // Buscamos mesa mas usada y retornamos el codigo
+        
+        $pedido = new Pedido(); 
+        
+        $mesaMasUsadaMensaje = $pedido->mesaMasUsada();
+        
+        $payload = json_encode(array("mensaje" => "$mesaMasUsadaMensaje"));
+
+        $response->getBody()->write($payload);
+        return $response
+          ->withHeader('Content-Type', 'application/json');
+    }
     
 }
 

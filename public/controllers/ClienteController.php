@@ -39,5 +39,7 @@ class ClienteController
         return $response
           ->withHeader('Content-Type', 'application/json');
     }
+
+   
 } 
 ?>

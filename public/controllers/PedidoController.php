@@ -138,7 +138,6 @@ class PedidoController
           ->withHeader('Content-Type', 'application/json');
     }
 
-
     public function TraerDemoraDeUno($request, $response, $args)
     {
         // Buscamos mesa por codigo
@@ -202,7 +201,31 @@ class PedidoController
     }
 
 
+    public function CobrarCuenta($request, $response, $args)
+    {
+        $parametros = $request->getParsedBody();
 
+        $codigoMesa = $parametros['codigoMesa'];
+
+        // Creamos el pedido
+        $pedido = new Pedido();
+        $totalPrecioFinal =  $pedido->cobrarCuenta($codigoMesa);
+        if ($totalPrecioFinal !== false) 
+        {
+          //cambiar estado de mesa a 3
+          $payload = json_encode(array("mensaje" => "El estado de la mesa paso a pagando. 
+          Total a pagar: $totalPrecioFinal"));
+        }
+        else
+        {
+          $payload = json_encode(array("mensaje" => "No se pudo cobrar la mesa. Codigo Mesa:".$codigoMesa));
+        }
+       
+
+        $response->getBody()->write($payload);
+        return $response
+          ->withHeader('Content-Type', 'application/json');
+    }
 }
 
 

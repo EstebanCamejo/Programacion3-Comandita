@@ -273,8 +273,44 @@ class Pedido
             $cambiosRealizados = true;
             $mesasModificadas [] = $codigoMesa;
         }
-        return ($cambiosRealizados) ? $mesasModificadas : false;
-     
+        return ($cambiosRealizados) ? $mesasModificadas : false;     
+    }
+
+    public function cobrarCuenta($codigoMesa) 
+    {
+        $objAccesoDato = AccesoDatos::obtenerInstancia();
+
+        // Paso 1: Buscar y acumular precioFinal
+        $consulta = $objAccesoDato->prepararConsulta("SELECT SUM(precioFinal) AS total 
+        FROM pedido WHERE codigoMesa = :codigoMesa");
+        $consulta->bindValue(':codigoMesa', $codigoMesa, PDO::PARAM_STR);
+        $consulta->execute();
+        $totalPrecioFinal = $consulta->fetch(PDO::FETCH_ASSOC)['total'];
+
+        // Paso 2: Cambiar estadoMesa a 3
+        $consulta = $objAccesoDato->prepararConsulta("UPDATE mesa SET estadoMesa = 3 
+        WHERE codigoMesa = :codigoMesa");
+        $consulta->bindValue(':codigoMesa', $codigoMesa, PDO::PARAM_STR);
+        $consulta->execute();
+
+        return $totalPrecioFinal;
+    }
+
+    public function mesaMasUsada() {
+        $objAccesoDato = AccesoDatos::obtenerInstancia();
+
+        // Paso 1: Contar las veces que aparece cada codigoMesa en la tabla pedido
+        $consulta = $objAccesoDato->prepararConsulta("SELECT codigoMesa, COUNT(*) AS total 
+        FROM pedido GROUP BY codigoMesa ORDER BY total DESC LIMIT 1");
+        $consulta->execute();
+        $mesaMasUsada = $consulta->fetch(PDO::FETCH_ASSOC);
+
+        // Paso 2: Retornar el codigoMesa más utilizado y la cantidad de veces que aparece
+        if ($mesaMasUsada) {
+            return "Código de Mesa: {$mesaMasUsada['codigoMesa']}, Aparece {$mesaMasUsada['total']} veces.";
+        } else {
+            return "No hay datos en la tabla pedido.";
+        }
     }
 }
 

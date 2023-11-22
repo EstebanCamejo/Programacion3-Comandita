@@ -1,4 +1,5 @@
 <?php 
+
     class Producto 
     {
         public $id;
@@ -112,6 +113,29 @@
             $consulta->bindValue(':id', $producto->id, PDO::PARAM_INT);
 
             $consulta->execute();
+        }
+
+        public static function CargarCSV($archivo)
+        {
+            $array = manejadorCSV::LeerCsv($archivo);
+          
+            for($i = 0; $i < sizeof($array); $i++)
+            {             
+                $campos = explode(",", $array[$i]);               
+                
+                $producto = new Producto();
+                $producto->id = $campos[0];
+                $producto->sector = $campos[1];
+                $producto->nombre = $campos[2];
+                $producto->precio = $campos[3];
+                $producto->tiempoPreparacion = $campos[4];
+                $producto->activo = $campos[5];
+                $producto->fechaAlta = $campos[6];
+                $producto->fechaModificacion = $campos[7];
+                $producto->fechaBaja = $campos [8];
+                
+                $producto->crearProducto();
+            }
         }
     }
 

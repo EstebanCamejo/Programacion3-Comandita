@@ -1,5 +1,7 @@
 <?php
 require_once './models/Producto.php';
+require_once './ArchivosCSV/manejadorCSV.php';
+
 class ProductoController 
 {
     public function CargarUno($request, $response, $args)
@@ -65,6 +67,7 @@ class ProductoController
         return $response
           ->withHeader('Content-Type', 'application/json');
     }
+
     public function ModificarUno($request, $response, $args)
     {
         $parametros = $request->getParsedBody();
@@ -94,6 +97,60 @@ class ProductoController
           ->withHeader('Content-Type', 'application/json');
     }
 
+    public function exportarTabla($request, $response, $args)
+    {
+        try {
+            manejadorCSV::exportarTabla('producto', 'Producto', 'producto.csv');
+            $payload = json_encode("Tabla exportada con éxito");
+            $response->getBody()->write($payload);
+            $newResponse = $response->withHeader('Content-Type', 'application/json');
+            return $newResponse;
+        } catch (\Throwable $mensaje) {
+            // Aquí maneja los errores si ocurrieron durante la exportación
+            $response->getBody()->write("Error al exportar: " . $mensaje->getMessage());
+            return $response->withStatus(500); // Devuelve un estado de error 500
+        }
+    }
+
+/*
+    public function ExportarTabla($request, $response, $args)
+    {
+        try
+        {
+            manejadorCSV::exportarTabla('producto', 'Producto', 'producto.csv');
+            $payload = json_encode("Tabla exportada con éxito");
+            $response->getBody()->write($payload);
+            $newResponse = $response->withHeader('Content-Type', 'application/json');
+        }
+        catch(Throwable $mensaje)
+        {
+            printf("Error al listar: <br> $mensaje .<br>");
+        }
+        finally
+        {
+            return $newResponse;
+        }    
+    }*/
+
+    public function ImportarTabla($request, $response, $args)
+    {
+        try
+        {
+            $archivo = ($_FILES["archivo"]);          
+            Producto::CargarCSV($archivo["tmp_name"]);
+            $payload = json_encode("Carga exitosa.");
+            $response->getBody()->write($payload);
+            $newResponse = $response->withHeader('Content-Type', 'application/json');
+        }
+        catch(Throwable $mensaje)
+        {
+            printf("Error al listar: <br> $mensaje .<br>");
+        }
+        finally
+        {
+            return $newResponse;
+        }    
+    }
 
 }
 ?>
