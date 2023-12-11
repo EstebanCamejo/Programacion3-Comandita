@@ -28,8 +28,21 @@ class EncuestaController
         $encuesta->activo = 1;  
     
         $encuesta->crearEncuesta();
+        if($encuesta)
+        {
+          $payload = json_encode(array("mensaje" => "Encuesta creada con exito. Muchas gracias! ",
+          "puntuacionMozo"=> $encuesta->puntuacionMozo ,  
+          "puntuacionCocina"=>$encuesta->puntuacionCocina ,  
+          "puntuacionMesa"=>$encuesta->puntuacionMesa ,  
+          "puntuacionBebidas"=>$encuesta->puntuacionBebidas,  
+          "comentario"=>$encuesta->comentario ,  
+          "codigoMesa"=>$encuesta->codigoMesa ,  
+          "codigoPedido"=>$encuesta->codigoPedido ,),JSON_PRETTY_PRINT);                      
+        }else
+        {
+          $payload = json_encode(array("mensaje" => "Error al crear la encuesta."), JSON_PRETTY_PRINT);
+        }
         
-        $payload = json_encode(array("mensaje" => "Encuesta creada con exito. Muchas gracias! "));
     
         $response->getBody()->write($payload);
         return $response
@@ -41,7 +54,7 @@ class EncuestaController
         // Buscamos mejores promedios y mostramos los comentarios
         $encuesta = new Encuesta();
         $comentarios = $encuesta ->mejoresComentarios();      
-        $payload = json_encode($comentarios );
+        $payload = json_encode($comentarios,JSON_PRETTY_PRINT);
 
         $response->getBody()->write($payload);
         return $response

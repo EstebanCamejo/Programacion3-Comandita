@@ -42,9 +42,7 @@ class Pedido
         $consulta->bindValue(':foto', $this->activo, PDO::PARAM_STR);    
         //$precioFinal = $this->calcularPrecioFinal($this->codigoPedido);
         //$consulta->bindValue(':precioFinal', $precioFinal, PDO::PARAM_INT); 
-
-        
-        
+                
         $consulta->execute();
         
         return $objAccesoDatos->obtenerUltimoId();
@@ -69,12 +67,14 @@ class Pedido
         pedido.codigoPedido, 
         pedido.idCliente, 
         pedido.codigoMesa, 
+        pedido.idEmpleado,
         pedido.fechaFinalizacion, 
         estadopedido.estado as estadoPedido, 
         pedido.fechaAlta,
         pedido.fechaModificacion,
         pedido.fechaBaja,
         pedido.precioFinal,
+        pedido.activo,
         pedido.foto
         FROM 
             pedido 
@@ -100,6 +100,7 @@ class Pedido
             pedido.fechaModificacion,
             pedido.fechaBaja,
             pedido.precioFinal, 
+            pedido.activo,
             pedido.foto
             FROM pedido 
             JOIN estadopedido ON pedido.estadoPedido = estadopedido.id 
@@ -123,6 +124,7 @@ class Pedido
         $consulta->bindValue(':fechaModificacion', $fechaModificacion, PDO::PARAM_STR);
 
         $consulta->execute();
+        return $consulta->rowCount() > 0;
     }
 
     public static function borrarPedido($codigoPedido)
@@ -138,8 +140,8 @@ class Pedido
         $consulta->bindValue(':fechaBaja', $fechaBaja, PDO::PARAM_STR);
 
         $consulta->execute();
+        return $consulta->rowCount() > 0;
     }
-
 
     public static function modificarPedido($pedido)
     {
@@ -165,44 +167,66 @@ class Pedido
 
         $consulta->bindValue(':codigoPedido', $pedido->codigoPedido, PDO::PARAM_STR);
         $consulta->execute();
+        return $consulta->rowCount() > 0;
     }
 
     public static function calcularDemoraPedido($codigoPedido)
-    {
-        $objAccesoDato = AccesoDatos::obtenerInstancia();
+    {       
+        $codigoMesa = Mesa::obtenerCodigoMesaPorCodigoPedido($codigoPedido);       
+        $mensaje = "El tiempo de espera es de ";
+        $tiempoDeEspera = Cliente::VerTiempoEstimadoMaximo($codigoPedido,$codigoMesa);
+        $horaDelPedido = Pedido::obtenerHoraPedido($codigoPedido,$codigoMesa);        
+        $horarioActual =  date('H:i:s');
 
-        // Obtener el mayor tiempoEstimado y su fecha de alta asociada
-        $consultaTiempoMaximo = $objAccesoDato->prepararConsulta(
-            "SELECT MAX(tiempoEstimado) as tiempoMaximoEntrega, MAX(fechaAlta) as fechaAlta
-            FROM pedidoproducto
-            WHERE codigoPedido = :codigoPedido");
+        if ($horaDelPedido && $tiempoDeEspera) {
 
-        $consultaTiempoMaximo->bindValue(':codigoPedido', $codigoPedido, PDO::PARAM_STR);
-        $consultaTiempoMaximo->execute();
-        $resultadoConsulta = $consultaTiempoMaximo->fetch(PDO::FETCH_ASSOC);
+          $tiempoDeEsperaFormateado = ClienteController::horaASegundos($tiempoDeEspera);
+          $horaDelPedidoFormateado = ClienteController::horaASegundos($horaDelPedido);
+          $horarioActualFormateado = ClienteController::horaASegundos($horarioActual);
 
-        if ($resultadoConsulta && $resultadoConsulta['tiempoMaximoEntrega'] && $resultadoConsulta['fechaAlta']) {
-            // Guardar el tiempo máximo y la fecha de alta
-            $tiempoMaximoEntrega = DateTime::createFromFormat('H:i:s', $resultadoConsulta['tiempoMaximoEntrega']);
-            $fechaAlta = new DateTime($resultadoConsulta['fechaAlta']);
+          $horaActualMasTiempoEspera = $horaDelPedidoFormateado + $tiempoDeEsperaFormateado;
+          $diferenciaTiempo = $horaActualMasTiempoEspera - $horarioActualFormateado;
 
-            // Obtener el horario actual
-            $fechaActual = new DateTime();
+          $diferenciaTiempoFormateada = ClienteController::segundosAHora($diferenciaTiempo);
 
-            // Calcular la diferencia de tiempo entre la fecha de alta y el horario actual
-            $diferenciaTiempo = $fechaAlta->diff($fechaActual);
+          if($diferenciaTiempoFormateada>0)
+          {
+            $mensajeRetorno = json_encode($mensaje .$diferenciaTiempoFormateada , JSON_PRETTY_PRINT);
+          }else
+          {
+            $mensajeRetorno = json_encode("Tiempo de espera vencido", JSON_PRETTY_PRINT);
+          }
 
-            // Restar la diferencia de tiempo al tiempo máximo estimado
-            $tiempoRestante = clone $tiempoMaximoEntrega;
-            $tiempoRestante->sub($diferenciaTiempo);
-
-            return $tiempoRestante->format('H:i:s'); // Formato HH:MM:SS para el tiempo restante
+        } else {
+            $mensajeRetorno = json_encode("ERROR en el cálculo del tiempo máximo.", JSON_PRETTY_PRINT);
         }
-
-        return "No se encontró información para calcular la demora del pedido.";
+        
+        return $mensajeRetorno;        
     }
     
+
+    public static function obtenerPedidosVencidos()
+    {
+        $objAccesoDatos = AccesoDatos::obtenerInstancia();
     
+        $consulta = $objAccesoDatos->prepararConsulta("SELECT codigoPedido FROM pedido WHERE activo = 1");
+    
+        $consulta->execute();
+        $codigosPedidos = $consulta->fetchAll(PDO::FETCH_COLUMN);
+    
+        $pedidosVencidos = [];
+    
+        foreach ($codigosPedidos as $codigoPedido) {
+            $tiempoEspera = self::calcularDemoraPedido($codigoPedido);
+            if ($tiempoEspera === json_encode("Tiempo de espera vencido", JSON_PRETTY_PRINT)) {
+                $pedidosVencidos[] = $codigoPedido;
+            }
+        }
+    
+        return $pedidosVencidos;
+    }
+    
+
     public function GuardarImagen($ruta, $imagen)
     {
         $destino = $ruta . ".jpg";
@@ -235,9 +259,10 @@ class Pedido
     public static function ValidarPedidoPorCodigo($codigoPedido)
     {
         $listaPedido = Pedido::obtenerTodos();
-        $esValido = -1;
+        $esValido = -1;      
+
         foreach ($listaPedido as $pedido) 
-        {
+        {              
             if($pedido->codigoPedido == $codigoPedido)
             {
                 $esValido = $pedido->id;
@@ -253,7 +278,7 @@ class Pedido
         $objAccesoDato = AccesoDatos::obtenerInstancia();
         $cambiosRealizados = false;
         $mesasModificadas = [];
-        // Consulta para obtener los códigos de mesa de pedidos con estado igual a 2
+        // Consulta para obtener los códigos de mesa de pedidos con estado igual a 2 == en preparacion
         $consultaPedidos = $objAccesoDato->prepararConsulta(
             "SELECT codigoMesa FROM pedido WHERE estadoPedido = 2"
         );
@@ -276,7 +301,7 @@ class Pedido
         return ($cambiosRealizados) ? $mesasModificadas : false;     
     }
 
-    public function cobrarCuenta($codigoMesa) 
+    public static function cobrarCuenta($codigoMesa) 
     {
         $objAccesoDato = AccesoDatos::obtenerInstancia();
 
@@ -312,6 +337,31 @@ class Pedido
             return "No hay datos en la tabla pedido.";
         }
     }
+
+    public static function obtenerHoraPedido($codigoPedido, $codigoMesa)
+    {
+        $objAccesoDatos = AccesoDatos::obtenerInstancia();
+
+        $consulta = $objAccesoDatos->prepararConsulta("SELECT DATE_FORMAT(fechaAlta, '%H:%i:%s') as horaAlta 
+            FROM pedido 
+            WHERE codigoPedido = :codigoPedido AND codigoMesa = :codigoMesa");
+
+        $consulta->bindValue(':codigoPedido', $codigoPedido, PDO::PARAM_STR);
+        $consulta->bindValue(':codigoMesa', $codigoMesa, PDO::PARAM_STR);
+
+        $consulta->execute();
+
+        $resultado = $consulta->fetch(PDO::FETCH_ASSOC);
+
+        if ($resultado) {
+            return $resultado['horaAlta'];
+        } else {
+            return null; // O podrías manejar el caso en que no se encuentre el pedido.
+        }
+    }
+
+    
+
 }
 
 

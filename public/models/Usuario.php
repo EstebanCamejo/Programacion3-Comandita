@@ -1,5 +1,7 @@
 <?php
 
+use Dompdf\Dompdf;
+
 class Usuario
 {
     public $id;
@@ -27,6 +29,7 @@ class Usuario
         $consulta->bindValue(':fechaModificacion', $this->fechaModificacion, PDO::PARAM_STR);        
         $consulta->bindValue(':estado', $this->estado, PDO::PARAM_INT);
         $consulta->bindValue(':activo', $this->activo, PDO::PARAM_INT);
+        
 
         $consulta->execute();
 
@@ -83,6 +86,7 @@ class Usuario
 
     public static function borrarUsuario($usuarioId)
     {        
+        //var_dump($usuarioId);
         $objAccesoDato = AccesoDatos::obtenerInstancia();
         $nuevoEstado = 0;
         $fechaBaja = date ('Y-m-d H:i:s');
@@ -95,10 +99,12 @@ class Usuario
         $consulta->bindValue(':fechaBaja', $fechaBaja, PDO::PARAM_STR);
 
         $consulta->execute();
+        return $consulta->rowCount() > 0;
     }
 
     public static function bajaUsuario($usuarioId)
     {
+       // var_dump($usuarioId);
         $objAccesoDato = AccesoDatos::obtenerInstancia();
         $nuevoEstado = 3;
         $fechaModificacion = date ('Y-m-d H:i:s');
@@ -111,6 +117,7 @@ class Usuario
         $consulta->bindValue(':fechaModificacion', $fechaModificacion, PDO::PARAM_STR);
 
         $consulta->execute();
+        return $consulta->rowCount() > 0;
     }
     
     
@@ -134,7 +141,9 @@ class Usuario
         $consulta->bindValue(':estado', $usuario->estado, PDO::PARAM_INT);
         $consulta->bindValue(':fechaModificacion', $fechaModificacion, PDO::PARAM_STR);
         $consulta->bindValue(':id', $usuario->id, PDO::PARAM_INT);
-        $consulta->execute();                                        
+        $consulta->execute();       
+        
+        return $consulta->rowCount() > 0;
     }
 
     public static function validarUsuario($usuario)
@@ -152,5 +161,28 @@ class Usuario
         return $consulta->fetchObject('Usuario');
     }
 
+
+
+/*
+    public static function GeneratePdfFile($nombreArchivo)
+    {
+        $retorno = false;
+        $pdf = new Dompdf();
+        if($pdf !== null && $pdf instanceof Dompdf)
+        {
+            $html = $this->GenerarHtml();
+            if( $html !== null)
+            {
+                $pdf->loadHtml($html);
+                $pdf->setPaper('A4', 'portrait');
+                $pdf->render();
+                if(file_put_contents($nombreArchivo, $pdf->output()))
+                {
+                    $retorno = true;
+                }
+            }
+        }
+        return $retorno;
+    }*/
 
 }

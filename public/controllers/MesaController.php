@@ -8,22 +8,26 @@ class MesaController
     {
         $parametros = $request->getParsedBody();
 
-        $codigoMesa = $parametros['codigoMesa'];
-       
-
-        // Creamos el Mesa
+       // $codigoMesa = $parametros['codigoMesa'];       
         $mesa = new Mesa();
-        $mesa->codigoMesa = $codigoMesa;
+        //$mesa->codigoMesa = $codigoMesa;
         $mesa->estadoMesa = 4;
         $mesa->fechaAlta = date ('Y-m-d H:i:s');
         $mesa->fechaModificacion = date (':iY-m-d H:s');//"0000-00-00";
         $mesa->fechaBaja = date (':iY-m-d H:s');//"0000-00-00";
         $mesa->activo = 1;
 
-
         $mesa->crearMesa();
-
-        $payload = json_encode(array("mensaje" => "Mesa creada con exito"));
+        if($mesa)
+        {
+          $payload = json_encode(array("mensaje" => "Mesa creada con exito",
+          "codigoMesa"=>$mesa->codigoMesa,
+          "fechaAlta"=>$mesa->fechaAlta,),JSON_PRETTY_PRINT);        
+        }
+        else
+        {
+          $payload = json_encode(array("mensaje" => "La mesa no se creo."),JSON_PRETTY_PRINT);
+        }        
 
         $response->getBody()->write($payload);
         return $response
@@ -33,8 +37,17 @@ class MesaController
     public function TraerTodos($request, $response, $args)
     {
         $lista = Mesa::obtenerTodos();
-        $payload = json_encode(array("listaMesa" => $lista));
+      
+        if(empty($lista))
+        {
+          $error = array("error" => "No se encontraron mesas disponibles");
+          $payload = json_encode($error, JSON_PRETTY_PRINT);
 
+        }else
+        {
+          $payload = json_encode(array("lista Mesas" => $lista),JSON_PRETTY_PRINT);
+        }      
+        
         $response->getBody()->write($payload);
         return $response
           ->withHeader('Content-Type', 'application/json');
@@ -42,11 +55,17 @@ class MesaController
 
     public function TraerUno($request, $response, $args)
     {
-        // Buscamos mesa por codigo
         $codigo = $args['codigoMesa'];
         $mesa = Mesa::obtenerMesa($codigo);
-        $payload = json_encode($mesa);
+        if(empty($mesa))
+        {
+          $error = array("error" => "No se encontraro la mesa buscada.");
+          $payload = json_encode($error, JSON_PRETTY_PRINT);
 
+        }else
+        {
+          $payload = json_encode(array("Mesa"=>$mesa),JSON_PRETTY_PRINT);
+        }        
         $response->getBody()->write($payload);
         return $response
           ->withHeader('Content-Type', 'application/json');
@@ -56,9 +75,16 @@ class MesaController
     {
         $parametros = $request->getParsedBody();
         $codigoMesa = $parametros["codigoMesa"];
-        Mesa::cerrarMesa($codigoMesa);
+        $mesaCerrada = Mesa::cerrarMesa($codigoMesa);
 
-        $payload = json_encode(array("mensaje" => "Mesa cerrada con exito"));
+        if($mesaCerrada)
+        {
+          $payload = json_encode(array("mensaje" => "Mesa cerrada con exito","codigoMesa"=>$codigoMesa),JSON_PRETTY_PRINT);
+        }else
+        {
+          $payload = json_encode(array("mensaje" => "No se pudo cerrar la mesa"),JSON_PRETTY_PRINT);
+        }
+       
 
         $response->getBody()->write($payload);
         return $response
@@ -68,10 +94,17 @@ class MesaController
     public function BorrarUno($request, $response, $args)
     {
         $codigoMesa = $args["codigoMesa"];
-        Mesa::borrarMesa($codigoMesa);
+        $mesaBorrada = Mesa::borrarMesa($codigoMesa);
 
-        $payload = json_encode(array("mensaje" => "Mesa dada de baja cerrada con exito"));
-
+        if($mesaBorrada)
+        {
+          $payload = json_encode(array("mensaje" => "Mesa dada de baja cerrada con exito",
+          "codigo mesa"=>$codigoMesa),JSON_PRETTY_PRINT);
+        }else
+        {
+          $payload = json_encode(array("mensaje" => "No se pudo borrar la mesa"),JSON_PRETTY_PRINT);
+        }
+       
         $response->getBody()->write($payload);
         return $response
           ->withHeader('Content-Type', 'application/json');
@@ -85,15 +118,38 @@ class MesaController
         $codigoMesa = $parametros['codigoMesa'];
         $estadoMesa = $parametros['estadoMesa'];
 
+        $estadosPermitidos = [1, 2, 3, 4];
+        if (!in_array($estadoMesa, $estadosPermitidos)) {
+            $payload = json_encode(array("mensaje" => "El estado de la mesa no es válido"), JSON_PRETTY_PRINT);
+            $response->getBody()->write($payload);
+            return $response->withHeader('Content-Type', 'application/json')->withStatus(400); // Código de estado 400 para solicitud incorrecta
+        }
         // Creamos la Mesa
         $mesa = new Mesa();
         $mesa->id = $id;
         $mesa->codigoMesa = $codigoMesa;
         $mesa->estadoMesa = $estadoMesa;        
 
-        Mesa::modificarMesa($mesa);
+        $estadosLegibles = [
+          1 => "Esperando pedido",
+          2 => "Comiendo",
+          3 => "Pagando",
+          4 => "Cerrada"
+        ];
+        $estadoLegible = $estadosLegibles[$estadoMesa];
+        
+        $mesaModificada = Mesa::modificarMesa($mesa);
 
-        $payload = json_encode(array("mensaje" => "Mesa modificada con exito"));
+        if($mesaModificada)
+        {
+          $payload = json_encode(array("mensaje" => "Mesa modificada con exito:",
+          "codigoMesa"=>$mesa->codigoMesa,
+          "estadoMesa"=>$estadoLegible),JSON_PRETTY_PRINT);
+        }else
+        {
+          $payload = json_encode(array("mensaje" => "la mesa no se modifico"),JSON_PRETTY_PRINT);
+        }
+       
 
         $response->getBody()->write($payload);
         return $response
@@ -109,12 +165,54 @@ class MesaController
         
         $mesaMasUsadaMensaje = $pedido->mesaMasUsada();
         
-        $payload = json_encode(array("mensaje" => "$mesaMasUsadaMensaje"));
+        $payload = json_encode(array("mesaMasUsadaMensaje:" => "$mesaMasUsadaMensaje"),JSON_PRETTY_PRINT);
 
         $response->getBody()->write($payload);
         return $response
           ->withHeader('Content-Type', 'application/json');
     }
+    
+
+    public function MasBarataAMasCara($request, $response, $args)
+    {
+        $lista = Mesa::facturacionAscendente();
+
+        if (empty($lista)) {
+            $error = array("error" => "No se encontraron mesas disponibles");
+            $payload = json_encode($error, JSON_PRETTY_PRINT);
+        } else {
+            $payload = json_encode(array("Facturacion ascendente de mesas" => $lista), JSON_PRETTY_PRINT);
+        }
+
+        $response->getBody()->write($payload);
+        return $response->withHeader('Content-Type', 'application/json');
+    }
+
+    public function facturacionEntreDosFechas($request, $response, $args)
+    {
+        $parametros = $request->getParsedBody();
+        $codigoMesa = $parametros["codigoMesa"];
+        $fechaInicio = $parametros["fechaInicio"];
+        $fechaFin = $parametros["fechaFin"];
+    
+        $totalFacturacion = Mesa::listadoFacturacionEntreFechas($codigoMesa, $fechaInicio, $fechaFin);
+    
+        if ($totalFacturacion !== null) {
+            $payload = json_encode(array(
+                "Total facturado entre $fechaInicio y $fechaFin para la mesa $codigoMesa" => $totalFacturacion
+            ), JSON_PRETTY_PRINT);
+        } else {
+            $payload = json_encode(array(
+                "mensaje" => "No hay facturación para estas fechas o para esta mesa."
+            ), JSON_PRETTY_PRINT);
+        }
+    
+        $response->getBody()->write($payload);
+        return $response->withHeader('Content-Type', 'application/json');
+    }
+    
+
+
     
 }
 

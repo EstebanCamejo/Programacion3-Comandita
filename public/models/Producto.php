@@ -89,6 +89,7 @@
             $consulta->bindValue(':fechaBaja', $fechaBaja, PDO::PARAM_STR);
     
             $consulta->execute();
+            return $consulta->rowCount() > 0;
         }
 
         public static function modificarProducto($producto)
@@ -107,12 +108,12 @@
             $consulta->bindValue(':sector', $producto->sector, PDO::PARAM_STR);
             $consulta->bindValue(':nombre', $producto->nombre, PDO::PARAM_STR);
             $consulta->bindValue(':precio', $producto->precio, PDO::PARAM_INT);
-            $consulta->bindValue(':tiempoPreparacion', $producto->tiempoPreparacion, PDO::PARAM_STR);
-           // $consulta->bindValue(':activo', $producto->activo, PDO::PARAM_INT);
+            $consulta->bindValue(':tiempoPreparacion', $producto->tiempoPreparacion, PDO::PARAM_STR);           
             $consulta->bindValue(':fechaModificacion', $fechaModificacion, PDO::PARAM_STR);
             $consulta->bindValue(':id', $producto->id, PDO::PARAM_INT);
 
             $consulta->execute();
+            return $consulta->rowCount() > 0;
         }
 
         public static function CargarCSV($archivo)
@@ -137,6 +138,29 @@
                 $producto->crearProducto();
             }
         }
+
+                
+        public static function obtenerProductosMasVendidos()
+        {
+            $objAccesoDatos = AccesoDatos::obtenerInstancia();
+        
+            $consulta = $objAccesoDatos->prepararConsulta("SELECT p.nombre 
+                AS nombre_producto, 
+                COUNT(pp.idProducto) 
+                AS cantidad_vendida
+                FROM producto p
+                LEFT JOIN pedidoproducto pp ON p.id = pp.idProducto
+                WHERE p.activo = 1
+                GROUP BY p.id, p.nombre
+                ORDER BY cantidad_vendida DESC
+            ");
+        
+            $consulta->execute();
+        
+            return $consulta->fetchAll(PDO::FETCH_ASSOC);
+        }
+        
+        
     }
 
 

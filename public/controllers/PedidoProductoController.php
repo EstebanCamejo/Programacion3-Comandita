@@ -1,6 +1,8 @@
 <?php 
 
 require_once './models/PedidoProducto.php';
+require_once './models/Producto.php';
+
 
 class PedidoProductoController 
 {
@@ -10,22 +12,38 @@ class PedidoProductoController
         
         $codigoPedido = $parametros['codigoPedido'];
         $idProducto = $parametros['idProducto'];       
-        $codigoMesa = $parametros['codigoMesa'];       
+        $codigoMesa = $parametros['codigoMesa']; 
+        
+        
+        $producto = Producto::obtenerProducto($idProducto);
+
         // Creamos el pedido producto
         $pedidoproducto = new PedidoProducto();
         $pedidoproducto->codigoPedido = $codigoPedido;
-        $pedidoproducto->idProducto = $idProducto;
-        $pedidoproducto->tiempoEstimado = (':iY-m-d H:s');//"0000-00-00";
+        $pedidoproducto->idProducto = $idProducto;      
         $pedidoproducto->codigoMesa = $codigoMesa;
         $pedidoproducto->fechaAlta =  date ('Y-m-d H:i:s');
         $pedidoproducto->fechaModificacion =  date (':iY-m-d H:s');//"0000-00-00";
         $pedidoproducto->fechaBaja =  date (':iY-m-d H:s');//"0000-00-00";
         $pedidoproducto->estado = 1; 
-        $pedidoproducto->activo = 1;
+        $pedidoproducto->activo = 1;       
+        $pedidoproducto->tiempoEstimado =  $producto->tiempoPreparacion;
+        $pedidoproducto->sector = $producto->sector;
+        $pedidoproducto->nombre = $producto->nombre;
+
 
         $pedidoproducto->crearPedidoProducto();
+        
 
-        $payload = json_encode(array("mensaje" => "Pedido Producto creado con exito"));
+        $payload = json_encode(array("mensaje" => "Pedido Producto creado con exito",
+        "codigoPedido"=>$pedidoproducto->codigoPedido,          
+        "codigoMesa"=>$pedidoproducto->codigoMesa,
+        "fechaAlta"=>$pedidoproducto->fechaAlta,
+        "tiempoEstimado"=>$pedidoproducto->tiempoEstimado,
+        "sector"=>$pedidoproducto->sector,
+        "nombre"=>$pedidoproducto->nombre,
+        "precio"=>$producto->precio
+        ),JSON_PRETTY_PRINT);
 
         $response->getBody()->write($payload);
         return $response
@@ -35,7 +53,13 @@ class PedidoProductoController
     public function TraerTodos($request, $response, $args)
     {
         $lista = PedidoProducto::obtenerTodos();
-        $payload = json_encode(array("listaPedidoProducto" => $lista));
+        if(!empty($lista))
+        {
+          $payload = json_encode(array("lista de Pedidos Productos" => $lista),JSON_PRETTY_PRINT);
+        }else
+        {
+          $payload = json_encode(array("No se encontraron pedidos productos"),JSON_PRETTY_PRINT);
+        }        
 
         $response->getBody()->write($payload);
         return $response
@@ -47,8 +71,14 @@ class PedidoProductoController
         // Buscamos producto por id
         $id = $args['id'];
         $pedidoproducto = PedidoProducto::obtenerPedidoProducto($id);
-        $payload = json_encode($pedidoproducto);
-
+        if(!empty($pedidoproducto))
+        {
+          $payload = json_encode(array("pedido producto encontrado" =>$pedidoproducto),JSON_PRETTY_PRINT);
+        }else
+        {
+          $payload = json_encode(array("mensaje" =>"Pedido producto no encontrado"),JSON_PRETTY_PRINT);
+        }
+      
         $response->getBody()->write($payload);
         return $response
           ->withHeader('Content-Type', 'application/json');
@@ -59,7 +89,13 @@ class PedidoProductoController
         // Buscamos producto por id
         $sector = $args['sector'];
         $pedidoproducto = PedidoProducto::obtenerPedidosPorSector($sector);
-        $payload = json_encode($pedidoproducto);
+        if(!empty($pedidoproducto))
+        {
+          $payload = json_encode(array("listado pedido producto pendientes"=>$pedidoproducto),JSON_PRETTY_PRINT);
+        }else
+        {
+          $payload = json_encode(array("mensaje" =>"No se encontraron pendientes"),JSON_PRETTY_PRINT);
+        }        
 
         $response->getBody()->write($payload);
         return $response
@@ -68,11 +104,16 @@ class PedidoProductoController
 
     public function BorrarUno($request, $response, $args)
     {
-        $codigoPedido = $args["codigoPedido"];
-        var_dump($codigoPedido);
-        PedidoProducto::borrarPedidoProducto($codigoPedido);
-
-        $payload = json_encode(array("mensaje" => "Pedido Producto borrado con exito"));
+        $codigoPedido = $args["id"];
+        //var_dump($codigoPedido);
+        $pedidoProductoborrado = PedidoProducto::borrarPedidoProducto($codigoPedido);
+        if($pedidoProductoborrado)
+        {
+          $payload = json_encode(array("mensaje" => "Pedido Producto borrado con exito"),JSON_PRETTY_PRINT);
+        }else
+        {
+          $payload = json_encode(array("mensaje" => "Error, el pedido producto no se borro"),JSON_PRETTY_PRINT);
+        }       
 
         $response->getBody()->write($payload);
         return $response
@@ -84,30 +125,48 @@ class PedidoProductoController
         $parametros = $request->getParsedBody();
 
         $id = $parametros['id'];
-        $codigoPedido = $parametros['codigoPedido'];
-        $idProducto = $parametros['idProducto'];
         $tiempoEstimado = $parametros['tiempoEstimado'];
-        $codigoMesa = $parametros['codigoMesa'];
         $estado = $parametros['estado'];
 
         // Creamos el pedido
         $pedidoProducto = new PedidoProducto();
         $pedidoProducto->id = $id;
-        $pedidoProducto->codigoPedido = $codigoPedido;
-        $pedidoProducto->idProducto = $idProducto;
         $pedidoProducto->tiempoEstimado = $tiempoEstimado;
-        $pedidoProducto->codigoMesa = $codigoMesa;
         $pedidoProducto->estado = $estado;
-        PedidoProducto::modificarPedidoProducto($pedidoProducto);
-        $pedidoProducto->estado = 1;
 
-        $payload = json_encode(array("mensaje" => "Pedido Producto modificado con exito"));
+        if($estado == 2)
+        {
+          $estadoModificado = "en proceso";
+        }else if($estado == 3)
+        {
+          $estadoModificado = "listo para servir";
+        }          
+        else
+        {
+          $estadoModificado = $pedidoProducto->estado;
+        }
 
+        $ppNombre = PedidoProducto::obtenerNombrePedidoProductoPorId($id);
+
+        $modificado = PedidoProducto::modificarPedidoProducto($pedidoProducto);  
+        
+        if($modificado)
+        {
+          $payload = json_encode(array("mensaje" => "Pedido Producto modificado con exito",
+          "id"=>$pedidoProducto->id,      
+          "tiempoEstimado"=>$pedidoProducto->tiempoEstimado,
+          "estado"=>$estadoModificado,
+          "nombre"=>$ppNombre),JSON_PRETTY_PRINT);                
+        
+        }else 
+        {
+          $payload = json_encode(array("mensaje" => "Error, al intentar modificacion"),JSON_PRETTY_PRINT);
+        }
+      
         $response->getBody()->write($payload);
         return $response
           ->withHeader('Content-Type', 'application/json');
     }
-
     
 }
 

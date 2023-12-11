@@ -43,17 +43,22 @@ class Mesa
 
     public static function obtenerTodos()
     {
-        $objAccesoDatos = AccesoDatos::obtenerInstancia();
-      //$consulta = $objAccesoDatos->prepararConsulta("SELECT mesa.id, mesa.codigoMesa, mesa.estadoMesa 
-      //FROM mesa JOIN estadomesa ON mesa.estadoMesa = estadomesa.estado");
-        $consulta = $objAccesoDatos->prepararConsulta("SELECT 
-        mesa.id, 
-        mesa.codigoMesa, 
-        estadomesa.estado as estadoMesa 
-        FROM 
-            mesa 
-        JOIN 
-            estadomesa ON mesa.estadoMesa = estadomesa.id WHERE mesa.activo = 1");
+        $objAccesoDatos = AccesoDatos::obtenerInstancia();      
+        $consulta = $objAccesoDatos->prepararConsulta("SELECT
+                mesa.id AS id, 
+                mesa.codigoMesa AS codigoMesa, 
+                estadomesa.estado AS estadoMesa,
+                mesa.fechaAlta AS fechaAlta,
+                mesa.fechaModificacion AS fechaModificacion,
+                mesa.fechaBaja AS fechaBaja,
+                mesa.activo AS activo
+            FROM 
+                mesa 
+            JOIN 
+                estadomesa ON mesa.estadoMesa = estadomesa.id 
+            WHERE 
+                mesa.activo = 1"
+        );
         $consulta->execute();
 
         return $consulta->fetchAll(PDO::FETCH_CLASS, 'Mesa');
@@ -67,7 +72,6 @@ class Mesa
         FROM mesa 
         JOIN estadomesa ON mesa.estadoMesa = estadomesa.id
         WHERE mesa.codigoMesa = :codigoMesa AND mesa.activo = 1");
-
 
         $consulta->bindValue(':codigoMesa', $codigo, PDO::PARAM_STR);
         $consulta->execute();
@@ -88,8 +92,28 @@ class Mesa
         $consulta->bindValue(':fechaModificacion', $fechaModificacion, PDO::PARAM_STR);
 
         $consulta->execute();
+        return $consulta->rowCount()>0;
     }
-
+    
+    public static function obtenerCodigoMesaPorCodigoPedido($codigo)
+    {
+        $objAccesoDatos = AccesoDatos::obtenerInstancia();
+        $consulta = $objAccesoDatos->prepararConsulta(
+            "SELECT pedido.codigoMesa
+            FROM pedido 
+            WHERE pedido.codigoPedido = :codigoPedido AND pedido.activo = 1"
+        );
+        $consulta->bindValue(':codigoPedido', $codigo, PDO::PARAM_STR);
+        $consulta->execute();
+    
+        $resultado = $consulta->fetch(PDO::FETCH_ASSOC);
+    
+        if ($resultado) {
+            return $resultado['codigoMesa'];
+        }
+    
+        return null; // Devolver null si no se encontró ningún código de mesa para el pedido dado
+    }
     public static function borrarMesa($codigoMesa)
     {
         $objAccesoDato = AccesoDatos::obtenerInstancia();
@@ -103,6 +127,7 @@ class Mesa
         $consulta->bindValue(':fechaBaja', $fechaBaja, PDO::PARAM_STR);
 
         $consulta->execute();
+        return $consulta->rowCount()>0;
     }
 
     public static function modificarMesa($mesa)
@@ -123,7 +148,50 @@ class Mesa
         $consulta->bindValue(':id', $mesa->id, PDO::PARAM_INT);
 
         $consulta->execute();
+
+        return $consulta->rowCount()>0;
     }
+
+    public static function facturacionAscendente()
+    {
+        $objAccesoDatos = AccesoDatos::obtenerInstancia();
+
+        $consulta = $objAccesoDatos->prepararConsulta("SELECT mesa.codigoMesa, 
+            SUM(pedido.precioFinal) 
+            AS total_facturado, usuario.nombre AS mozo_atendio
+            FROM mesa
+            LEFT JOIN pedido ON mesa.codigoMesa = pedido.codigoMesa
+            LEFT JOIN usuario ON pedido.idEmpleado = usuario.id
+            WHERE mesa.activo = 1 AND pedido.activo = 1
+            GROUP BY mesa.codigoMesa
+            ORDER BY mesa.codigoMesa ASC, total_facturado ASC
+        ");
+
+        $consulta->execute();
+
+        return $consulta->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public static function listadoFacturacionEntreFechas($codigoMesa, $fechaInicio, $fechaFin)
+{
+    $objAccesoDatos = AccesoDatos::obtenerInstancia();
+
+    $consulta = $objAccesoDatos->prepararConsulta("SELECT SUM(precioFinal) 
+        AS facturacion_total
+        FROM pedido
+        WHERE codigoMesa = :codigoMesa 
+        AND fechaAlta BETWEEN STR_TO_DATE(:fechaInicio, '%d-%m-%Y') AND STR_TO_DATE(:fechaFin, '%d-%m-%Y')
+        AND activo = 1
+    ");
+
+    $consulta->bindValue(':codigoMesa', $codigoMesa, PDO::PARAM_STR);
+    $consulta->bindValue(':fechaInicio', $fechaInicio, PDO::PARAM_STR);
+    $consulta->bindValue(':fechaFin', $fechaFin, PDO::PARAM_STR);
+    $consulta->execute();
+
+    return $consulta->fetch(PDO::FETCH_ASSOC)['facturacion_total'];
+}
+
 }
 
 ?>

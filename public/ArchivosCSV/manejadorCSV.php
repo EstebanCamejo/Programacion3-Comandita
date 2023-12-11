@@ -20,24 +20,6 @@
             }
         }
 
-        /*
-        public static function GrabarEnCsv($item, $ruta)
-        {             
-            $retorno = false;
-            //var_dump($usuario);
-            if($item)
-            {
-                $separadoPorComa = implode(",", (array)$item);
-                $file = fopen($ruta, "a+");
-                if($file)
-                {
-                    fwrite($file, $separadoPorComa.PHP_EOL); 
-                }                 
-                fclose($file);   
-                $retorno = true;
-            }
-            return $retorno;                  
-        }*/
 
         public static function exportarTabla($tabla, $clase, $ruta)
         {
@@ -50,16 +32,7 @@
                 throw new Exception("No se encontraron datos para exportar.");
             }
         }
-        /* 
-        public static function exportarTabla($tabla, $clase, $ruta)
-        {
-            $listaProductos = AccesoDatos::obtenerTodos($tabla, $clase); 
-            
-            foreach($listaProductos as $item)
-            {
-                self::grabarEnCsv($item, $ruta);
-            }
-        }*/
+
         
         public static function LeerCsv($archivo)
         {

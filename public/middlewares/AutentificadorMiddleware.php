@@ -23,7 +23,6 @@ class AutentificadorMiddleware
             $payload = json_encode(array('mensaje' => 'No sos Admin'));
             $response->getBody()->write($payload);
         }
-
         return $response->withHeader('Content-Type', 'application/json');
     }
 
@@ -84,8 +83,7 @@ class AutentificadorMiddleware
             $payload = json_encode(array('mensaje' => 'ERROR: Usuario no autorizado'));
             $response->getBody()->write( $payload);
         }
-       
-      
+             
         return $response->withHeader('Content-Type','application/json');
     }
 
@@ -100,14 +98,14 @@ class AutentificadorMiddleware
 
             //////
             $data = AutentificadorJWT::ObtenerData($token);
-            /// si es un socio
+            /// si es un MOZO
             if ($data->tipoUsuario === 2)
             {   
                 //aca propaga el middleware a otro
                 $request->datosToken= $data;
 
                 $response = $handler->handle($request);
-            } // si no es socio tiro una excepcion
+            } // si no es mozo tiro una excepcion
             else
             {
                 throw new Exception();
@@ -118,13 +116,12 @@ class AutentificadorMiddleware
             $response = new Response();
             $payload = json_encode(array('mensaje' => 'ERROR: Usuario no autorizado'));
             $response->getBody()->write( $payload);
-        }
-       
+        }       
       
         return $response->withHeader('Content-Type','application/json');
     }
 
-    public static function verificarRolOtrosUsuarios(Request $request, RequestHandler $handler) : Response
+    public static function verificarRolCervecero(Request $request, RequestHandler $handler) : Response
     {
         $header = $request->getHeaderLine('Authorization');
       
@@ -134,14 +131,14 @@ class AutentificadorMiddleware
 
             //////
             $data = AutentificadorJWT::ObtenerData($token);
-            /// si es un socio
-            if ($data->tipoUsuario >= 3)
+            /// si es un CERVECERO
+            if ($data->tipoUsuario === 3)
             {   
                 //aca propaga el middleware a otro
                 $request->datosToken= $data;
 
                 $response = $handler->handle($request);
-            } // si no es socio tiro una excepcion
+            } // si no es cervecero tiro una excepcion
             else
             {
                 throw new Exception();
@@ -153,14 +150,110 @@ class AutentificadorMiddleware
             $payload = json_encode(array('mensaje' => 'ERROR: Usuario no autorizado'));
             $response->getBody()->write( $payload);
         }
-       
-      
+             
         return $response->withHeader('Content-Type','application/json');
     }
 
 
+    public static function verificarRolCocinero(Request $request, RequestHandler $handler) : Response
+    {
+        $header = $request->getHeaderLine('Authorization');
+      
+        $token = trim(explode("Bearer", $header)[1]);
+        try{
+            AutentificadorJWT::VerificarToken($token);
+
+            //////
+            $data = AutentificadorJWT::ObtenerData($token);
+            /// si es un COCINERO
+            if ($data->tipoUsuario === 4)
+            {   
+                //aca propaga el middleware a otro
+                $request->datosToken= $data;
+
+                $response = $handler->handle($request);
+            } // si no es cocinero tiro una excepcion
+            else
+            {
+                throw new Exception();
+            }          
+        }
+        catch (Exception $e)
+        {
+            $response = new Response();
+            $payload = json_encode(array('mensaje' => 'ERROR: Usuario no autorizado'));
+            $response->getBody()->write( $payload);
+        }
+             
+        return $response->withHeader('Content-Type','application/json');
+    }
+    
+    public static function verificarRolBartender(Request $request, RequestHandler $handler) : Response
+    {
+        $header = $request->getHeaderLine('Authorization');
+      
+        $token = trim(explode("Bearer", $header)[1]);
+        try{
+            AutentificadorJWT::VerificarToken($token);
+
+            //////
+            $data = AutentificadorJWT::ObtenerData($token);
+            /// si es un BARTENDER
+            if ($data->tipoUsuario === 5)
+            {   
+                //aca propaga el middleware a otro
+                $request->datosToken= $data;
+
+                $response = $handler->handle($request);
+            } // si no es bartender tiro una excepcion
+            else
+            {
+                throw new Exception();
+            }          
+        }
+        catch (Exception $e)
+        {
+            $response = new Response();
+            $payload = json_encode(array('mensaje' => 'ERROR: Usuario no autorizado'));
+            $response->getBody()->write( $payload);
+        }
+             
+        return $response->withHeader('Content-Type','application/json');
+    }
 
     
+    public static function verificarRolPastelero(Request $request, RequestHandler $handler) : Response
+    {
+        $header = $request->getHeaderLine('Authorization');
+      
+        $token = trim(explode("Bearer", $header)[1]);
+        try{
+            AutentificadorJWT::VerificarToken($token);
+
+            //////
+            $data = AutentificadorJWT::ObtenerData($token);
+            /// si es un PASTELERO
+            if ($data->tipoUsuario === 6)
+            {   
+                //aca propaga el middleware a otro
+                $request->datosToken= $data;
+
+                $response = $handler->handle($request);
+            } // si no es pastelero tiro una excepcion
+            else
+            {
+                throw new Exception();
+            }          
+        }
+        catch (Exception $e)
+        {
+            $response = new Response();
+            $payload = json_encode(array('mensaje' => 'ERROR: Usuario no autorizado'));
+            $response->getBody()->write( $payload);
+        }
+             
+        return $response->withHeader('Content-Type','application/json');
+    }
 }
 
 ?>

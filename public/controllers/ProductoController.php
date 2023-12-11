@@ -27,7 +27,12 @@ class ProductoController
 
         $producto->crearProducto();
 
-        $payload = json_encode(array("mensaje" => "Producto creado con exito"));
+        $payload = json_encode(array("mensaje" => "Producto creado con exito",
+        "nombre"=>$producto->nombre,
+        "sector"=>$producto->sector,
+        "precio"=>$producto->precio,
+        "tiempoPreparacion"=>$producto->tiempoPreparacion,
+        "fechaAlta"=>$producto->fechaAlta),JSON_PRETTY_PRINT);
 
         $response->getBody()->write($payload);
         return $response
@@ -37,8 +42,14 @@ class ProductoController
     public function TraerTodos($request, $response, $args)
     {
         $lista = Producto::obtenerTodos();
-        $payload = json_encode(array("listaProducto" => $lista));
-
+       
+        if(!empty($lista))
+        {
+            $payload = json_encode(array("lista de productos" => $lista),JSON_PRETTY_PRINT);
+        }else
+        {
+            $payload = json_encode(array("mensaje" => "Error, no se encontro una lista de productos"),JSON_PRETTY_PRINT);
+        }
         $response->getBody()->write($payload);
         return $response
           ->withHeader('Content-Type', 'application/json');
@@ -49,8 +60,14 @@ class ProductoController
         // Buscamos producto por id
         $id = $args['id'];
         $producto = Producto::obtenerProducto($id);
-        $payload = json_encode($producto);
 
+        if(!empty($producto))
+        {
+            $payload = json_encode(array("Producto encontrado"=>$producto),JSON_PRETTY_PRINT);
+        }else
+        {
+            $payload = json_encode(array("Error, producto no encontrado"),JSON_PRETTY_PRINT);
+        }       
         $response->getBody()->write($payload);
         return $response
           ->withHeader('Content-Type', 'application/json');
@@ -59,10 +76,14 @@ class ProductoController
     public function BorrarUno($request, $response, $args)
     {
         $productoId = $args["id"];
-        Producto::borrarProducto($productoId);
-
-        $payload = json_encode(array("mensaje" => "Producto borrado con exito"));
-
+        $productoBorrado = Producto::borrarProducto($productoId);
+        if($productoBorrado)
+        {
+            $payload = json_encode(array("mensaje" => "Producto borrado con exito"),JSON_PRETTY_PRINT);
+        }else
+        {
+            $payload = json_encode(array("mensaje" => "Error, el producto no fue borrado"),JSON_PRETTY_PRINT);
+        }
         $response->getBody()->write($payload);
         return $response
           ->withHeader('Content-Type', 'application/json');
@@ -76,8 +97,7 @@ class ProductoController
         $sector = $parametros['sector'];
         $nombre = $parametros['nombre'];
         $precio = $parametros['precio'];
-        $tiempoPreparacion = $parametros['tiempoPreparacion'];
-        $activo = $parametros['activo'];
+        $tiempoPreparacion = $parametros['tiempoPreparacion'];        
 
         // Creamos el Producto
         $producto = new Producto();
@@ -85,12 +105,20 @@ class ProductoController
         $producto->sector = $sector;
         $producto->nombre = $nombre;
         $producto->precio = $precio;
-        $producto->tiempoPreparacion = $tiempoPreparacion;
-        $producto->activo = $activo;
+        $producto->tiempoPreparacion = $tiempoPreparacion;      
 
-        Producto::modificarProducto($producto);
-
-        $payload = json_encode(array("mensaje" => "Producto modificado con exito"));
+        $productoModificado = Producto::modificarProducto($producto);
+        if($productoModificado)
+        {
+            $payload = json_encode(array("mensaje" => "Producto modificado con exito",
+            "sector"=>$producto->sector,
+            "nombre"=>$producto->nombre,
+            "precio"=>$producto->precio,
+            "tiempoPreparacion"=>$producto->tiempoPreparacion),JSON_PRETTY_PRINT);        
+        }else
+        {
+            $payload = json_encode(array("mensaje" => "Error, el producto no se modifico"),JSON_PRETTY_PRINT);
+        }   
 
         $response->getBody()->write($payload);
         return $response
@@ -112,25 +140,6 @@ class ProductoController
         }
     }
 
-/*
-    public function ExportarTabla($request, $response, $args)
-    {
-        try
-        {
-            manejadorCSV::exportarTabla('producto', 'Producto', 'producto.csv');
-            $payload = json_encode("Tabla exportada con éxito");
-            $response->getBody()->write($payload);
-            $newResponse = $response->withHeader('Content-Type', 'application/json');
-        }
-        catch(Throwable $mensaje)
-        {
-            printf("Error al listar: <br> $mensaje .<br>");
-        }
-        finally
-        {
-            return $newResponse;
-        }    
-    }*/
 
     public function ImportarTabla($request, $response, $args)
     {
@@ -150,6 +159,22 @@ class ProductoController
         {
             return $newResponse;
         }    
+    }
+
+    public function ListarProductoOdenadoPorMayorVenta($request, $response, $args)
+    {
+        $lista = Producto::obtenerProductosMasVendidos();
+        if(!empty($lista))
+        {
+          $payload = json_encode(array("lista de Productos mas vendidos" => $lista),JSON_PRETTY_PRINT);
+        }else
+        {
+          $payload = json_encode(array("Error. No se encontraron productos"),JSON_PRETTY_PRINT);
+        }        
+
+        $response->getBody()->write($payload);
+        return $response
+          ->withHeader('Content-Type', 'application/json');
     }
 
 }
