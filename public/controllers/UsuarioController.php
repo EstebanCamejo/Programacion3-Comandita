@@ -184,21 +184,4 @@ class UsuarioController
         return $response
           ->withHeader('Content-Type', 'application/json');
     }
-    /*
-    public function guardarLogoPdf ($request, $response, $args)
-    {
-      $archivoGuardado = Usuario::GeneratePdfFile("logoPdf");
-
-      if($archivoGuardado)
-      {
-        $payload = json_encode(array("mensaje" => "Archivo guardado con exito."), JSON_PRETTY_PRINT);
-      }else
-      {
-        $payload = json_encode(array("mensaje" => "Error al generar el PDF."),JSON_PRETTY_PRINT);
-      }
-      $response->getBody()->write($payload);
-      return $response
-        ->withHeader('Content-Type', 'application/json');
-    }
-    */
 }

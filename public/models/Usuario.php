@@ -1,6 +1,7 @@
 <?php
 
 use Dompdf\Dompdf;
+require_once './pdfCreator.php';
 
 class Usuario
 {
@@ -162,27 +163,5 @@ class Usuario
     }
 
 
-
-/*
-    public static function GeneratePdfFile($nombreArchivo)
-    {
-        $retorno = false;
-        $pdf = new Dompdf();
-        if($pdf !== null && $pdf instanceof Dompdf)
-        {
-            $html = $this->GenerarHtml();
-            if( $html !== null)
-            {
-                $pdf->loadHtml($html);
-                $pdf->setPaper('A4', 'portrait');
-                $pdf->render();
-                if(file_put_contents($nombreArchivo, $pdf->output()))
-                {
-                    $retorno = true;
-                }
-            }
-        }
-        return $retorno;
-    }*/
 
 }

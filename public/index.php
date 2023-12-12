@@ -23,6 +23,8 @@ require_once './controllers/LogController.php';
 require_once './middlewares/AutentificadorJWT.php';
 require_once './middlewares/AutentificadorMiddleware.php';
 require_once './middlewares/LogMiddleware.php';
+require_once 'pdfCreator.php';
+
 
 
 
@@ -92,12 +94,28 @@ $app->group('/archivoProductos', function (RouteCollectorProxy $group){
 ->add(\AutentificadorMiddleware::class . ':verificarRolSocio');
 
 // ARCHIVO PDF
-$app->group('/archivoPdf', function (RouteCollectorProxy $group){
 
-  $group->get('/guardarLogoPdf[/]', \UsuarioController::class . ':ExportarPdf');
-})
-->add(\AutentificadorMiddleware::class . ':verificarToken')
+$app->get('/download', function($request, $response, $args) {
+  
+  $rutaCompleta = PDF::CrearPDF();
+  
+  $filename = $rutaCompleta;  
+
+  header('Pragma: public');
+  header('Expires: 0');
+  header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
+  header('Content-Description: File Transfer');
+  header('Content-Type: application/pdf');
+  header('Content-Disposition: attachment; filename="'. basename($filename) .'.pdf"');
+  header('Content-Transfer-Encoding: binary');
+  header('Cache-Control: max-age=0');
+  readfile($filename);
+  return true;
+})->add(\AutentificadorMiddleware::class . ':verificarToken')
 ->add(\AutentificadorMiddleware::class . ':verificarRolSocio');
+
+
+
 
 // peticiones Mesas
 
@@ -190,7 +208,6 @@ $app->group('/pedidoproducto', function (RouteCollectorProxy $group){
 })
 ->add(\AutentificadorMiddleware::class . ':verificarToken')
 ->add(\AutentificadorMiddleware::class . ':verificarRolMozo');
-
 
 
 ///--------------------------------------OTROS-USUARIOS------------------------------------------------
